@@ -24,7 +24,11 @@ What he has told us is that the software was "almost" done and that any develope
 
 ## Start the project
 
-`docker-compose up`
+Configure your .env as the example and run `docker-compose up`
+
+## Execute tests
+
+After build, run tests `docker-compose run --rm test`
 
 ### Swagger
 
