@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .models import Journey
+from .models import Journey, Vehicle, VehicleType
 from .notifiers import Notifier
 from .repositories import JourneyRepository
 
@@ -46,3 +46,24 @@ class StopJourney:
 
     class CantEnd(Exception):
         pass
+
+
+class CreateVehicle:
+
+    def __init__(self, repository: JourneyRepository, notifier: Notifier):
+        self.data = None
+        self.repository = repository
+        self.notifier = notifier
+
+    def set_params(self, data: dict) -> CreateVehicle:
+        self.data = data
+        return self
+
+    def execute(self) -> Vehicle:
+        vehicle_type = VehicleType.objects.get(name=self.data["vehicle_type"])
+        vehicle = Vehicle.objects.create(
+            name=self.data["name"],
+            passengers=self.data["passengers"],
+            vehicle_type=vehicle_type,
+        )
+        return vehicle
