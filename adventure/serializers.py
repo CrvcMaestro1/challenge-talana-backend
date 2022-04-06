@@ -10,3 +10,7 @@ class VehicleSerializer(serializers.Serializer):
     name = serializers.CharField()
     passengers = serializers.IntegerField()
     vehicle_type = serializers.CharField()
+
+
+class JourneyDummySerializer(serializers.Serializer):
+    pass
