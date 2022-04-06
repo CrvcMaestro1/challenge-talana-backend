@@ -78,8 +78,8 @@ class TestStopJourneyAPIView:
         # and tests it
 
         mocker.patch.object(
-            models.Journey.objects,
-            "get",
+            views.StopJourneyAPIView,
+            "get_object",
             return_value=models.Journey(
                 id=1, start=timezone.now().date()
             ),
