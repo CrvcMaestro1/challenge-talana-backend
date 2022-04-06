@@ -1,8 +1,6 @@
 from rest_framework import generics
-from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
-from rest_framework.views import APIView
 
 from adventure import models, notifiers, repositories, serializers, usecases
 
@@ -10,19 +8,19 @@ from adventure import models, notifiers, repositories, serializers, usecases
 class CreateVehicleAPIView(generics.CreateAPIView):
     serializer_class = serializers.VehicleSerializer
 
-    def perform_create(self, serializer) -> Response:
-        vehicle = models.Vehicle.objects.create(
-            **serializer.validated_data
+    def perform_create(self, serializer) -> None:
+        repo = self.get_repository()
+        notifier = notifiers.Notifier()
+        usecase = usecases.CreateVehicle(repo, notifier).set_params(
+            serializer.validated_data
         )
-        return Response(
-            {
-                "id": vehicle.id,
-                "name": vehicle.name,
-                "passengers": vehicle.passengers,
-                "vehicle_type": vehicle.vehicle_type.name,
-            },
-            status=201,
-        )
+        try:
+            usecase.execute()
+        except Exception as e:
+            raise ValidationError({"detail": str(e)})
+
+    def get_repository(self) -> repositories.JourneyRepository:
+        return repositories.JourneyRepository()
 
 
 class StartJourneyAPIView(generics.CreateAPIView):
@@ -44,25 +42,18 @@ class StartJourneyAPIView(generics.CreateAPIView):
 
 
 class StopJourneyAPIView(generics.UpdateAPIView):
-    serializer_class = serializers.JourneySerializer
+    serializer_class = serializers.JourneyDummySerializer
+    queryset = models.Journey.objects
 
-    def put(self, request, *args, **kwargs):
-        params = self.kwargs
-        journey = models.Journey.objects.get(id=params["pk"])
+    def perform_update(self, serializer):
         repo = self.get_repository()
-        usecase = usecases.StopJourney(repo).set_params(journey)
-        try:
-            usecase.execute()
-            return Response(
-                {
-                    "id": journey.id,
-                    "start": journey.start,
-                    "end": journey.end,
-                },
-                status=200,
-            )
-        except usecases.StopJourney.CantEnd as e:
-            raise ValidationError({"detail": str(e)})
+        usecase = usecases.StopJourney(repo).set_params(self.get_object())
+        usecase.execute()
+
+    def update(self, request, *args, **kwargs):
+        super().update(request, *args, **kwargs)
+        journey = self.get_object()
+        return Response({"id": journey.id, "start": journey.start, "end": journey.end})
 
     def get_repository(self) -> repositories.JourneyRepository:
         return repositories.JourneyRepository()
